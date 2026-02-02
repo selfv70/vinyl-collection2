@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Vic's Vinyl Collection</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#f2f2f7;padding-bottom:80px}
+.home{min-height:100vh;display:flex;flex-direction:column;background:#fff;text-align:center;padding:40px 20px}
+.vinyl{width:140px;height:140px;margin:0 auto 40px;background:linear-gradient(135deg,#AF52DE,#007AFF);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:64px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+h1{font-size:34px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#007AFF,#AF52DE);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:17px;color:#666;margin-bottom:40px}
+.count{font-size:48px;font-weight:700;color:#007AFF;margin-bottom:4px}
+.features{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+.feature{background:#f2f2f7;border-radius:12px;padding:20px}
+.icon{font-size:32px;margin-bottom:8px}
+.btn{width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:600;border:none;margin-bottom:12px;cursor:pointer}
+.primary{background:#007AFF;color:#fff}
+.secondary{background:#f2f2f7;color:#007AFF}
+.nav{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:12px 16px;z-index:100}
+.nav h2{font-size:34px;font-weight:700}
+.list{background:#fff;border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin:20px 0}
+.item{padding:11px 16px;border-bottom:1px solid #ddd;display:flex;gap:12px;align-items:center}
+.item:last-child{border-bottom:none}
+.form{background:#fff;border-bottom:1px solid #ddd;padding:11px 16px;display:flex;gap:12px}
+.form label{min-width:80px}
+.form input,.form select{flex:1;border:none;font-size:17px;text-align:right}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;padding:8px 0;z-index:100}
+.tab{display:flex;flex-direction:column;align-items:center;padding:4px 12px;background:none;border:none;color:#999;font-size:10px;cursor:pointer}
+.tab.active{color:#007AFF}
+.tab-icon{font-size:24px}
+.hidden{display:none}
+.art{width:60px;height:60px;border-radius:8px;background:#e5e5ea;display:flex;align-items:center;justify-content:center;font-size:28px}
+.search{width:100%;padding:10px;border:none;background:#f2f2f7;border-radius:10px;font-size:17px;margin:8px 16px;width:calc(100% - 32px)}
+.scanner{background:#000;border-radius:12px;height:240px;margin:16px}
+#scanner video{width:100%;height:100%;object-fit:cover}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+<div id="home" class="home">
+<div class="vinyl">💿</div>
+<h1>Vic's Vinyl Collection</h1>
+<p class="subtitle">Your personal music archive</p>
+<div class="count" id="count">0</div>
+<p style="color:#999;font-size:15px;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:20px">Items in Collection</p>
+<div class="features">
+<div class="feature"><div class="icon">📷</div><div style="font-weight:600">Scan Barcodes</div></div>
+<div class="feature"><div class="icon">🔍</div><div style="font-weight:600">Auto Search</div></div>
+<div class="feature"><div class="icon">📊</div><div style="font-weight:600">Organize</div></div>
+<div class="feature"><div class="icon">💾</div><div style="font-weight:600">Save Local</div></div>
+</div>
+<button class="btn primary" onclick="goTo('collection')">💿 View Collection</button>
+<button class="btn secondary" onclick="goTo('add')">➕ Add Your First Item</button>
+</div>
+<div id="collection" class="hidden">
+<div class="nav"><h2>Collection</h2></div>
+<input type="text" class="search" placeholder="Search" id="search" onkeyup="render()">
+<div id="list"></div>
+</div>
+<div id="add" class="hidden">
+<div class="nav"><h2>Add Item</h2></div>
+<div id="scanner-wrap" class="hidden"><div class="scanner"><div id="scanner"></div></div></div>
+<div class="list">
+<div class="item" onclick="toggleScan()"><span style="font-size:24px">📷</span><div style="flex:1;color:#007AFF" id="scan-label">Scan Barcode</div></div>
+<div class="item" onclick="searchName()"><span style="font-size:24px">🔍</span><div style="flex:1;color:#007AFF">Search Discogs</div></div>
+</div>
+<div class="list">
+<div class="form"><label>Artist</label><input id="artist" placeholder="Required"></div>
+<div class="form"><label>Title</label><input id="title" placeholder="Required"></div>
+<div class="form"><label>Year</label><input id="year" placeholder="Required"></div>
+<div class="form"><label>Format</label><select id="format"><option value="vinyl">Vinyl</option><option value="cassette">Cassette</option></select></div>
+<div class="form"><label>Genre</label><select id="genre"><option value="">None</option><option>Rock</option><option>Pop</option><option>Jazz</option><option>Hip Hop</option><option>Electronic</option><option>Classical</option></select></div>
+</div>
+<div style="padding:16px"><button class="btn primary" onclick="save()">Add to Collection</button></div>
+</div>
+<div class="tabs hidden" id="tabs">
+<button class="tab active" onclick="switchTab('collection')"><div class="tab-icon">💿</div><div>Collection</div></button>
+<button class="tab" onclick="switchTab('add')"><div class="tab-icon">➕</div><div>Add</div></button>
+<button class="tab" onclick="goTo('home')"><div class="tab-icon">🏠</div><div>Home</div></button>
+</div>
+<script>
+let c=JSON.parse(localStorage.getItem('vinyl')||'[]');
+let scan=false;
+let data={};
+function goTo(v){
+document.getElementById('home').classList.toggle('hidden',v!=='home');
+document.getElementById('collection').classList.toggle('hidden',v!=='collection');
+document.getElementById('add').classList.toggle('hidden',v!=='add');
+document.getElementById('tabs').classList.toggle('hidden',v==='home');
+if(v==='collection')render();
+updateCount();
+}
+function switchTab(v){
+document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(v==='collection'?0:1)));
+goTo(v);
+}
+function updateCount(){document.getElementById('count').textContent=c.length}
+function toggleScan(){
+const w=document.getElementById('scanner-wrap');
+const l=document.getElementById('scan-label');
+if(scan){if(window.Quagga)Quagga.stop();w.classList.add('hidden');l.textContent='Scan Barcode';scan=false;return}
+w.classList.remove('hidden');l.textContent='Stop Scanning';scan=true;
+setTimeout(()=>{
+Quagga.init({inputStream:{type:"LiveStream",target:document.querySelector('#scanner'),constraints:{facingMode:"environment"}},decoder:{readers:["ean_reader","upc_reader"]}},e=>{
+if(e){alert('Camera error');toggleScan();return}
+Quagga.start();
+});
+Quagga.onDetected(async r=>{toggleScan();await search('barcode',r.codeResult.code)});
+},300);
+}
+async function searchName(){
+const a=document.getElementById('artist').value.trim();
+const t=document.getElementById('title').value.trim();
+if(!a&&!t){alert('Enter artist or title');return}
+await search('text',`${a} ${t}`);
+}
+async function search(type,q){
+try{
+const url=type==='barcode'?`https://api.discogs.com/database/search?barcode=${encodeURIComponent(q)}`:`https://api.discogs.com/database/search?q=${encodeURIComponent(q)}&type=release`;
+const res=await fetch(url,{headers:{'User-Agent':'VinylPWA/1.0'}});
+const d=await res.json();
+if(d.results&&d.results[0]){
+const r=d.results[0];
+document.getElementById('artist').value=r.artist||'';
+document.getElementById('title').value=r.title||'';
+document.getElementById('year').value=r.year||'';
+document.getElementById('genre').value=(r.genre&&r.genre[0])||'';
+data={thumb:r.thumb||'',id:r.id||''};
+alert(`Found: ${r.title}`);
+}
+}catch(e){console.error(e)}
+}
+function save(){
+const a=document.getElementById('artist').value.trim();
+const t=document.getElementById('title').value.trim();
+const y=document.getElementById('year').value.trim();
+if(!a||!t||!y){alert('Artist, Title, Year required');return}
+c.push({id:Date.now(),artist:a,title:t,year:y,format:document.getElementById('format').value,genre:document.getElementById('genre').value,thumb:data.thumb||'',discogsId:data.id||''});
+localStorage.setItem('vinyl',JSON.stringify(c));
+['artist','title','year'].forEach(i=>document.getElementById(i).value='');
+data={};
+goTo('collection');
+}
+function render(){
+const s=document.getElementById('search')?.value.toLowerCase()||'';
+let f=c.filter(i=>!s||i.artist.toLowerCase().includes(s)||i.title.toLowerCase().includes(s));
+f.sort((a,b)=>a.artist.localeCompare(b.artist));
+const l=document.getElementById('list');
+if(f.length===0){l.innerHTML='<div style="text-align:center;padding:60px 20px;color:#666"><div style="font-size:64px;margin-bottom:16px">💿</div><p>No items yet</p></div>';return}
+l.innerHTML='<div class="list">'+f.map(i=>`<div class="item"><div class="art">${i.thumb?`<img src="${i.thumb}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:i.format==='vinyl'?'💿':'📼'}</div><div style="flex:1"><div style="font-size:17px;font-weight:600">${i.artist}</div><div style="font-size:15px;color:#666;margin-top:2px">${i.title}</div><div style="font-size:13px;color:#999;margin-top:2px">${i.year} · ${i.format}${i.genre?' · '+i.genre:''}</div></div></div>`).join('')+'</div>';
+}
+updateCount();
+render();
+</script>
+</body>
+</html>
